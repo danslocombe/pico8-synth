@@ -68,6 +68,8 @@ function draw_canvas()
     end
 end
 
+local spectro_y = 100
+local spectro_height = 28
 
 function _update60()
     --cls()
@@ -83,7 +85,7 @@ function _update60()
             local t_pat = (t\80) % 64
             local wave = 0
 
-            local note_mult_a = read_pat(pat_a, t_pat)
+            local note_mult_a = 0.5 -- read_pat(pat_a, t_pat)
             if (note_mult_a > 0) then
                 local desired_input = t * 0.5 * #canvas * note_mult_a
                 local index = flr(desired_input % #canvas)
@@ -103,9 +105,9 @@ function _update60()
             if i == 0 then
                 --rectfill(30, 84 - 30, 30 + 512/8, 84 + 30, 0)
                 cls()
-                line(30, 90, 30, 90, 7)
+                line(30, spectro_y, 30, spectro_y, 7)
             elseif i % 8 == 0 then
-                line(30+draw_incr * i, 90 + wave * 30, 7)
+                line(30+draw_incr * i, spectro_y + wave * spectro_height, 7)
             end
             poke(0x4300 + i, (0.5 + 0.5*wave)*255)
         end

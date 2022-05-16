@@ -11,6 +11,8 @@ pat_a    = "55_::_5_55_333__" .. "33_88_3_33_111__" .. "11_66_1_111_000_" .. "55
 pat_bass = "BB_B__6_DD_D__8_" .. "AA_A__=_:_=_<_:_" .. "<<_<__=_:_=_<_:_" .. "==_=__=___<_A___"
 pat_b    = "::_==_:_::_888__" .. "88_<<_8_88_555__" .. "66_::_6_666_333_" .. "55555555________"
 
+octave = 1
+
 function read_pat(pat, t_pat)
   local note_mult = 1
   local pat_val = ord(pat, t_pat + 1) - 48
@@ -68,6 +70,48 @@ function draw_canvas()
     end
 end
 
+
+function create_button(text, x, y, click_fn)
+    return {
+        text = text,
+        x = x,
+        y = y,
+        width = 8,
+        height = 8,
+        mouse_in = false,
+        click_fn = click_fn,
+        tick = function(self)
+            local mouse_x = stat(32)
+            local mouse_y = stat(33)
+            self.mouse_in
+                  = mouse_x > self.x
+                and mouse_x < (self.x + self.width) 
+                and mouse_y > self.y
+                and mouse_y < (self.y + self.height)
+
+            if self.mouse_in then
+                local mouse_pressed = band(0x1, stat(34)) != 0
+                if mouse_pressed then
+                    self.click_fn()
+                end
+            end
+        end,
+        draw = function(self)
+            local col = 7
+            if (self.mouse_in) then
+                col = 6
+            end
+            rect(self.x, self.y, self.x+self.width, self.y+self.height, col)
+            print(self.text, self.x, self.y, col)
+        end,
+    }
+end
+
+buttons = {}
+add(buttons, create_button("o1", 105, 10, function() octave = 0.5 end))
+add(buttons, create_button("o2", 105, 20, function() octave = 1 end))
+add(buttons, create_button("o3", 105, 30, function() octave = 2 end))
+
 local spectro_y = 100
 local spectro_height = 28
 
@@ -75,6 +119,10 @@ function _update60()
     --cls()
 
     tick_canvas()
+
+    for i,o in pairs(buttons) do
+        o:tick()
+    end
 
     local to_buffer = 2048 - stat(108)
     local buffersize = 256
@@ -85,9 +133,9 @@ function _update60()
             local t_pat = (t\80) % 64
             local wave = 0
 
-            local note_mult_a = 0.5 -- read_pat(pat_a, t_pat)
+            local note_mult_a = read_pat(pat_a, t_pat)
             if (note_mult_a > 0) then
-                local desired_input = t * 0.5 * #canvas * note_mult_a
+                local desired_input = t * 0.5 * #canvas * note_mult_a * octave
                 local index = flr(desired_input % #canvas)
                 wave += canvas[1 + index]
                 --local input_sin = t * 0.5 * note_mult_a
@@ -118,13 +166,17 @@ function _update60()
 end
 
 function _draw()
-    line(canvas_xoff, canvas_yoff, canvas_xoff + canvas_w, canvas_yoff)
-    line(canvas_xoff, canvas_yoff + canvas_h, canvas_xoff + canvas_w, canvas_yoff + canvas_h)
+    for i,o in pairs(buttons) do
+        o:draw()
+    end
 
-    line(canvas_xoff, canvas_yoff, canvas_xoff, canvas_yoff + canvas_h)
-    line(canvas_xoff + canvas_w, canvas_yoff, canvas_xoff + canvas_w, canvas_yoff + canvas_h)
+    line(canvas_xoff, canvas_yoff, canvas_xoff + canvas_w, canvas_yoff, 7)
+    line(canvas_xoff, canvas_yoff + canvas_h, canvas_xoff + canvas_w, canvas_yoff + canvas_h, 7)
 
-    line(canvas_xoff, canvas_yoff + canvas_h/2, canvas_xoff + canvas_w, canvas_yoff + canvas_h/2)
+    line(canvas_xoff, canvas_yoff, canvas_xoff, canvas_yoff + canvas_h, 7)
+    line(canvas_xoff + canvas_w, canvas_yoff, canvas_xoff + canvas_w, canvas_yoff + canvas_h, 7)
+
+    line(canvas_xoff, canvas_yoff + canvas_h/2, canvas_xoff + canvas_w, canvas_yoff + canvas_h/2, 7)
     draw_canvas()
     spr(1, stat(32), stat(33))
 end

@@ -76,7 +76,7 @@ function create_button(text, x, y, click_fn)
         text = text,
         x = x,
         y = y,
-        width = 8,
+        width = 3 + #text * 4,
         height = 8,
         mouse_in = false,
         click_fn = click_fn,
@@ -90,9 +90,8 @@ function create_button(text, x, y, click_fn)
                 and mouse_y < (self.y + self.height)
 
             if self.mouse_in then
-                local mouse_pressed = band(0x1, stat(34)) != 0
-                if mouse_pressed then
-                    self.click_fn()
+                if left_click_pressed then
+                    self:click_fn()
                 end
             end
         end,
@@ -102,21 +101,40 @@ function create_button(text, x, y, click_fn)
                 col = 6
             end
             rect(self.x, self.y, self.x+self.width, self.y+self.height, col)
-            print(self.text, self.x, self.y, col)
+            print(self.text, self.x + 2, self.y + 2, col)
         end,
     }
 end
 
 buttons = {}
-add(buttons, create_button("o1", 105, 10, function() octave = 0.5 end))
-add(buttons, create_button("o2", 105, 20, function() octave = 1 end))
-add(buttons, create_button("o3", 105, 30, function() octave = 2 end))
+add(buttons, create_button("o1", 100, 10, function(self) octave = 0.5 end))
+add(buttons, create_button("o2", 100, 20, function(self) octave = 1 end))
+add(buttons, create_button("o3", 100, 30, function(self) octave = 2 end))
+add(buttons, create_button("record", 100, 50, function(self)
+    if not is_recording then
+        extcmd("audio_rec")
+        is_recording = true
+        self.text = "stop"
+    else
+        extcmd("audio_end")
+        is_recording = false
+        self.text = "record"
+    end
+end))
 
-local spectro_y = 100
-local spectro_height = 28
+left_clicked_previous = false
+left_click_pressed = false
+
+is_recording = false
+saved_t = 0
+spectro_y = 100
+spectro_height = 28
 
 function _update60()
     --cls()
+    local mouse_pressed = band(0x1, stat(34)) != 0
+    left_click_pressed = mouse_pressed and not left_clicked_previous
+    left_clicked_previous = mouse_pressed
 
     tick_canvas()
 
@@ -133,7 +151,7 @@ function _update60()
             local t_pat = (t\80) % 64
             local wave = 0
 
-            local note_mult_a = read_pat(pat_a, t_pat)
+            local note_mult_a = 0.5 -- read_pat(pat_a, t_pat)
             if (note_mult_a > 0) then
                 local desired_input = t * 0.5 * #canvas * note_mult_a * octave
                 local index = flr(desired_input % #canvas)
@@ -166,6 +184,16 @@ function _update60()
 end
 
 function _draw()
+    if is_recording then
+        circfill(02,11,2, 8)
+        print("record", 06, 10, 7)
+    end
+
+    if saved_t > 0 then
+        print("saved audio to desktop", 10, 10)
+        saved_t -= 1
+    end
+
     for i,o in pairs(buttons) do
         o:draw()
     end

@@ -13,6 +13,12 @@ pat_b    = "::_==_:_::_888__" .. "88_<<_8_88_555__" .. "66_::_6_666_333_" .. "55
 
 octave = 1
 
+bg_col = 4
+foreground_col = 15
+hover_col = 9
+--bg_col = 8
+--oreground_col = 13
+
 function read_pat(pat, t_pat)
   local note_mult = 1
   local pat_val = ord(pat, t_pat + 1) - 48
@@ -33,6 +39,7 @@ canvas_xoff = 32
 canvas_yoff = 6
 canvas_w = 128 - 2*canvas_xoff
 canvas_h = canvas_w
+in_canvas = false
 
 -- enable cursor
 poke(0x5F2D, 1)
@@ -52,6 +59,8 @@ function tick_canvas()
     local mouse_y = (stat(33) - canvas_yoff) / canvas_h
     local mouse_pressed = band(0x1, stat(34)) != 0
 
+    in_canvas = mouse_x > 0 and mouse_x < 1 and mouse_y > 0 and mouse_y < 1
+
     if (mouse_pressed and mouse_x > 0 and mouse_x < 1) then
         mouse_y = clamp(mouse_y, 0, 1)
         local pos = flr(mouse_x * canvas_w)
@@ -59,14 +68,14 @@ function tick_canvas()
         canvas[pos] = x
     end
 
-    --print(mouse_x .. " " .. mouse_y, 10, 10, 7)
+    --print(mouse_x .. " " .. mouse_y, 10, 10, foreground_col)
 end
 
 function draw_canvas()
     line(canvas_xoff, canvas_yoff + canvas_h / 2)
     for i,x in pairs(canvas) do
-        line(canvas_xoff + i,
-             canvas_yoff + canvas_h / 2 + x * canvas_h / 2, 7)
+        line(canvas_xoff + i - 1,
+             canvas_yoff + canvas_h / 2 + x * canvas_h / 2, foreground_col)
     end
 end
 
@@ -96,9 +105,9 @@ function create_button(text, x, y, click_fn)
             end
         end,
         draw = function(self)
-            local col = 7
+            local col = foreground_col
             if (self.mouse_in) then
-                col = 6
+                col = hover_col
             end
             rect(self.x, self.y, self.x+self.width, self.y+self.height, col)
             print(self.text, self.x + 2, self.y + 2, col)
@@ -114,11 +123,12 @@ add(buttons, create_button("record", 100, 50, function(self)
     if not is_recording then
         extcmd("audio_rec")
         is_recording = true
-        self.text = "stop"
+        self.text = "save"
     else
         extcmd("audio_end")
         is_recording = false
         self.text = "record"
+        saved_t = 90
     end
 end))
 
@@ -170,10 +180,10 @@ function _update60()
 
             if i == 0 then
                 --rectfill(30, 84 - 30, 30 + 512/8, 84 + 30, 0)
-                cls()
-                line(30, spectro_y, 30, spectro_y, 7)
+                cls(bg_col)
+                line(30, spectro_y, 30, spectro_y, foreground_col)
             elseif i % 8 == 0 then
-                line(30+draw_incr * i, spectro_y + wave * spectro_height, 7)
+                line(30+draw_incr * i, spectro_y + wave * spectro_height, foreground_col)
             end
             poke(0x4300 + i, (0.5 + 0.5*wave)*255)
         end
@@ -186,34 +196,42 @@ end
 function _draw()
     if is_recording then
         circfill(02,11,2, 8)
-        print("record", 06, 10, 7)
+        print("record", 06, 10, foreground_col)
     end
 
-    if saved_t > 0 then
-        print("saved audio to desktop", 10, 10)
-        saved_t -= 1
-    end
 
     for i,o in pairs(buttons) do
         o:draw()
     end
 
-    line(canvas_xoff, canvas_yoff, canvas_xoff + canvas_w, canvas_yoff, 7)
-    line(canvas_xoff, canvas_yoff + canvas_h, canvas_xoff + canvas_w, canvas_yoff + canvas_h, 7)
+    line(canvas_xoff, canvas_yoff, canvas_xoff + canvas_w, canvas_yoff, foreground_col)
+    line(canvas_xoff, canvas_yoff + canvas_h, canvas_xoff + canvas_w, canvas_yoff + canvas_h, foreground_col)
 
-    line(canvas_xoff, canvas_yoff, canvas_xoff, canvas_yoff + canvas_h, 7)
-    line(canvas_xoff + canvas_w, canvas_yoff, canvas_xoff + canvas_w, canvas_yoff + canvas_h, 7)
+    line(canvas_xoff, canvas_yoff, canvas_xoff, canvas_yoff + canvas_h, foreground_col)
+    line(canvas_xoff + canvas_w, canvas_yoff, canvas_xoff + canvas_w, canvas_yoff + canvas_h, foreground_col)
 
-    line(canvas_xoff, canvas_yoff + canvas_h/2, canvas_xoff + canvas_w, canvas_yoff + canvas_h/2, 7)
+    line(canvas_xoff, canvas_yoff + canvas_h/2, canvas_xoff + canvas_w, canvas_yoff + canvas_h/2, foreground_col)
     draw_canvas()
-    spr(1, stat(32), stat(33))
+    if in_canvas then
+        palt(3, true)
+        spr(2, stat(32), stat(33))
+        palt(3, false)
+    else
+        spr(1, stat(32), stat(33))
+    end
+
+    if saved_t > 0 then
+        rectfill(00, 10, 128, 20, bg_col)
+        print("saved audio to desktop", 10, 10, foreground_col)
+        saved_t -= 1
+    end
 end
 __gfx__
-00000000d00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000dd0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000ddd000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000dddd00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000ddddd0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000dddd00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000d0dd00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000dd0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000090000000ff333333d0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000099000000f9a33333dd000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000099900000399a3333ddd00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000999900003399a333dddd0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000009999900033399633ddddd000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000099990000333366e3dddd0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000009099000033333ee3d0dd0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000000009900033333333000dd000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

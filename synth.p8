@@ -50,9 +50,9 @@ function read_pat(pat, t_pat)
   return -1
 end
 
-canvas_xoff = 32
+canvas_xoff = 16
 canvas_yoff = 6
-canvas_w = 128 - 2*canvas_xoff
+canvas_w = 64
 canvas_h = canvas_w
 in_canvas = false
 
@@ -91,8 +91,9 @@ end
 function draw_canvas()
     line(canvas_xoff, canvas_yoff + canvas_h / 2)
     for i,x in pairs(canvas) do
+        yoff = sin(0.5 * (time() + i * 0.12356) * 10)
         line(canvas_xoff + i - 1,
-             canvas_yoff + canvas_h / 2 + x * canvas_h / 2, foreground_col)
+             canvas_yoff + yoff + canvas_h / 2 + x * canvas_h / 2, foreground_col)
     end
 end
 
@@ -133,10 +134,10 @@ function create_button(text, x, y, click_fn)
 end
 
 buttons = {}
-add(buttons, create_button("o1", 100, 10, function(self) octave = 0.5 screenshake_t = 16 screenshake_mag = 2 force_reset = true end))
-add(buttons, create_button("o2", 100, 20, function(self) octave = 1 screenshake_t = 8 screenshake_mag = 1 force_reset = true end))
-add(buttons, create_button("o3", 100, 30, function(self) octave = 2 screenshake_t = 4 screenshake_mag = 0.5 force_reset = true end))
-add(buttons, create_button("record", 100, 50, function(self)
+add(buttons, create_button("o1", 90, 10, function(self) octave = 0.5 screenshake_t = 16 screenshake_mag = 2 force_reset = true end))
+add(buttons, create_button("o2", 90, 20, function(self) octave = 1 screenshake_t = 8 screenshake_mag = 1 force_reset = true end))
+add(buttons, create_button("o3", 90, 30, function(self) octave = 2 screenshake_t = 4 screenshake_mag = 0.5 force_reset = true end))
+add(buttons, create_button("record", 90, 50, function(self)
     if not is_recording then
         extcmd("audio_rec")
         is_recording = true
@@ -208,11 +209,10 @@ function _update60()
             end
 
             if i == 0 then
-                --rectfill(30, 84 - 30, 30 + 512/8, 84 + 30, 0)
                 cls(bg_col)
-                line(30, spectro_y, 30, spectro_y, foreground_col)
+                line(16, spectro_y, 16, spectro_y, foreground_col)
             elseif i % 8 == 0 then
-                line(30+draw_incr * i, spectro_y + wave * spectro_height, foreground_col)
+                line(16+draw_incr * i, spectro_y + wave * spectro_height, foreground_col)
             end
             poke(0x4300 + i, (0.5 + 0.5*wave)*255)
         end
@@ -230,7 +230,7 @@ function _draw()
 
     local t = time()
     local scale = 1.5 + 0.0125 * sin(t * 0.123)
-    local face_x = 100 + 2*sin(t * 0.32)
+    local face_x = 86 + 2*sin(t * 0.32)
     local face_y = 65 + 3*sin(t * 0.23)
     sspr(40, 0, 24, 24, face_x, face_y, 24 * scale, 32 * scale)
 

@@ -2,6 +2,8 @@ pico-8 cartridge // http://www.pico-8.com
 version 34
 __lua__
 
+printh("---------start----------")
+
 spectro_y = 100
 spectro_height = 28
 t = 0
@@ -491,6 +493,7 @@ function luafft.fft(input, inverse)
 
 	local twiddles = {}
    -- DAN MOD
+   --num_dan = num_points
    num_dan = num_points / 2
 	--for i = 0,num_points-1 do
 		--local phase = -2*pi * i / num_points
@@ -499,14 +502,19 @@ function luafft.fft(input, inverse)
 		if inverse then phase = phase * -1 end
       local twiddle_real = cos(phase)
       local twiddle_imaginary = sin(phase)
-      msg("Twiddle phase=")
-      msg(phase)
-      msg("Twiddle real=")
-      msg(twiddle_real)
-      msg("Twiddle imaginary=")
-      msg(twiddle_imaginary)
+      --msg("Twiddle phase=")
+      --msg(phase)
+      --msg("Twiddle real=")
+      --msg(twiddle_real)
+      --msg("Twiddle imaginary=")
+      --msg(twiddle_imaginary)
 		twiddles[1+i] = {real = twiddle_real, imag = twiddle_imaginary}
 	end
+   --print("twiddles")
+   --for i,c in pairs(twiddles) do
+   --   print(c.real .. "+" .. c.imag .. "i")
+   --end
+   --while true do end
 	msg("Twiddles initialized...")
 	local factors = calculate_factors(num_dan)
 	local output = {}
@@ -541,21 +549,23 @@ function work(input, output, out_index, f, factors, factors_index, twiddles, fst
 	local p = factors[factors_index]
 	local m = factors[factors_index+1]
 	factors_index = factors_index + 2
-   msg("Work p = ")
-   msg(p)
-   msg("Work m = ")
-   msg(m)
+   --msg("Work p = ")
+   --msg(p)
+   --msg("Work m = ")
+   --msg(m)
 	--msg(p,m)
 	local last = out_index + p*m
 	local beg = out_index
+
+   print("work m=" .. m)
 
 	if m == 1 then
 		repeat
 			--if type(input[f]) == "number" then output[out_index] = complex.new(input[f],0)
 			--else output[out_index] = input[f] end
-         print("f = " .. f)
-         print(input[f].real)
-         print(input[f].imag)
+         --print("f = " .. f)
+         --print(input[f].real)
+         --print(input[f].imag)
 			output[out_index] = input[f]
 			f = f + fstride*in_stride
 			out_index = out_index +1
@@ -564,32 +574,34 @@ function work(input, output, out_index, f, factors, factors_index, twiddles, fst
 		repeat
 			--msg("Out_index", out_index,"f", f)
 			work(input, output,out_index,  f, factors, factors_index, twiddles, fstride*p, in_stride, inverse)
+         print(output[out_index].real)
+         print(output[out_index].imag)
 			f = f + fstride*in_stride
 			out_index = out_index + m
 		until out_index == last
 	end
 
-   for i,c in pairs(output) do
-      print(c)
-      print(c.real)
-      print(c.imag)
-   end
+   --for i,c in pairs(output) do
+   --   print(c)
+   --   print(c.real)
+   --   print(c.imag)
+   --end
 
 	out_index = beg
 
-	if p == 2 then 			butterfly2_dan(output,out_index, fstride, twiddles, m, inverse)
-	elseif p == 3 then 		butterfly3(output,out_index, fstride, twiddles, m, inverse)
-	elseif p == 4 then 		butterfly4(output,out_index, fstride, twiddles, m, inverse)
-	elseif p == 5 then 	butterfly5(output,out_index, fstride, twiddles, m, inverse)
-	else 					butterfly_generic(output,out_index, fstride, twiddles, m, p, inverse) end
+	if p == 2 then 			butterfly2_dan(output,out_index, fstride, twiddles, m)
+	elseif p == 3 then 		butterfly3_dan(output,out_index, fstride, twiddles, m)
+	elseif p == 4 then 		butterfly4_dan(output,out_index, fstride, twiddles, m)
+	elseif p == 5 then 	butterfly5_dan(output,out_index, fstride, twiddles, m)
+	else 					butterfly_generic_dan(output,out_index, fstride, twiddles, m, p) end
 
-   print("done butterfly")
+   --print("done butterfly")
 
-   for i,c in pairs(output) do
-      print(c)
-      print(c.real)
-      print(c.imag)
-   end
+   --for i,c in pairs(output) do
+   --   print(c)
+   --   print(c.real)
+   --   print(c.imag)
+   --end
 end
 
 
@@ -642,19 +654,30 @@ end
 ---------------------------------------------------------------
 --Carries out a butterfly 2 run of the input sample.
 ---------------------------------------------------------------
-function butterfly2_dan(input,out_index,fstride, twiddles, m, inverse)
+function butterfly2_dan(input,out_index,fstride, twiddles, m)
     local i1 = out_index
     local i2 = out_index + m
     local ti = 1
     repeat
       local t = complex_mult(input[i2], twiddles[ti])
       ti = ti + fstride
-      input[i2] = complex_add(input[i2], t)
-      input[i1] = complex_sub(input[i1], t)
+      input[i2] = complex_sub(input[i1], t)
+      input[i1] = complex_add(input[i1], t)
+
+      printh("Butterfly2")
+      printh("Fout2 " .. input[i2].real .. "+" .. input[i2].imag .. "i")
+      printh("Fout1 " .. input[i1].real .. "+" .. input[i1].imag .. "i")
+
       i1 = i1 + 1
       i2 = i2 + 1
       m = m - 1
     until m == 0
+
+   --print("Butterfly2")
+   --for i,c in pairs(input) do
+   --   print(c.real .. "+" .. c.imag .. "i")
+   --end
+   --while true do end
 end
 function butterfly2(input,out_index,fstride, twiddles, m, inverse)
     local i1 = out_index
@@ -674,6 +697,52 @@ end
 ---------------------------------------------------------------
 --Carries out a butterfly 4 run of the input sample.
 ---------------------------------------------------------------
+function butterfly4_dan(input,out_index, fstride, twiddles, m)
+	local ti1, ti2, ti3 = 1,1,1
+	local scratch = {}
+	local k = m
+	local m2 = 2*m
+	local m3 = 3*m
+	local i = out_index
+
+   --print("Butterfly4_pre")
+   --for i,c in pairs(input) do
+   --   print(c.real .. "+" .. c.imag .. "i")
+   --end
+   --while true do end
+
+	repeat
+		scratch[0] = complex_mult(input[i+m],twiddles[ti1])
+		scratch[1] = complex_mult(input[i+m2],twiddles[ti2])
+		scratch[2] = complex_mult(input[i+m3],twiddles[ti3])
+
+		scratch[5] = complex_sub(input[i],scratch[1])
+		input[i] = complex_add(input[i],scratch[1])
+
+		scratch[3] = complex_add(scratch[0],scratch[2])
+		scratch[4] = complex_sub(scratch[0],scratch[2])
+
+		input[i+m2] = complex_sub(input[i],scratch[3])
+		ti1 = ti1 + fstride
+		ti2 = ti2 + fstride*2
+		ti3 = ti3 + fstride*3
+		input[i] = complex_add(input[i],scratch[3])
+
+      input[i+m].real = (scratch[5].real + scratch[4].imag)
+      input[i+m].imag = (scratch[5].imag - scratch[4].real)
+
+      input[i+m3].real = (scratch[5].real - scratch[4].imag)
+      input[i+m3].imag = (scratch[5].imag + scratch[4].real)
+
+		i = i + 1
+		k = k - 1
+	until k == 0
+
+   print("Butterfly4")
+   for i,c in pairs(input) do
+      print(c.real .. "+" .. c.imag .. "i")
+   end
+end
 function butterfly4(input,out_index, fstride, twiddles, m, inverse)
 	local ti1, ti2, ti3 = 1,1,1
 	local scratch = {}
@@ -720,6 +789,40 @@ end
 ---------------------------------------------------------------
 --Carries out a butterfly 3 run of the input sample.
 ---------------------------------------------------------------
+function butterfly3_dan(input,out_index, fstride, twiddles, m)
+	local k = m
+	local m2 = m*2
+	local tw1, tw2 = 1,1
+	local scratch = {}
+	local epi3 = twiddles[fstride*m]
+	local i = out_index
+
+	repeat
+		scratch[1] = complex_mult(input[i+m], twiddles[tw1])
+		scratch[2] = complex_mult(input[i+m2], twiddles[tw2])
+		scratch[3] = complex_add(scratch[1], scratch[2])
+		scratch[0] = complex_sub(scratch[1], scratch[2])
+		tw1 = tw1 + fstride
+		tw2 = tw2 + fstride*2
+
+		input[i+m].real = input[i].real - scratch[3].real*0.5
+		input[i+m].imag = input[i].imag - scratch[3].imag*0.5
+
+      scratch[0].real = scratch[0].real * epi3.imag
+      scratch[0].imag = scratch[0].iamg * epi3.imag
+		input[i] = complex_add(input[i], scratch[3])
+
+		input[i+m2].real = input[i+m].real + scratch[0].imag
+		input[i+m2].imag = input[i+m].imag - scratch[0].real
+
+		input[i+m].real = input[i+m].real - scratch[0].imag
+		input[i+m].imag = input[i+m].imag + scratch[0].real
+
+		i = i + 1
+		k = k-1
+	until k == 0
+end
+
 function butterfly3(input,out_index, fstride, twiddles, m, inverse)
 	local k = m
 	local m2 = m*2
@@ -757,6 +860,53 @@ end
 ---------------------------------------------------------------
 --Carries out a butterfly 5 run of the input sample.
 ---------------------------------------------------------------
+function butterfly5_dan(input,out_index, fstride, twiddles, m)
+	local i0,i1,i2,i3,i4 = out_index,out_index+m,out_index+2*m,out_index+3*m,out_index+4*m
+	local scratch = {}
+	local ya,yb = twiddles[1+fstride*m],twiddles[1+fstride*2*m]
+	for u = 0,m-1 do
+		scratch[0] = input[i0]
+
+		scratch[1] = complex_mult(input[i1], twiddles[1+u*fstride])
+		scratch[2] = complex_mult(input[i2], twiddles[1+2*u*fstride])
+		scratch[3] = complex_mult(input[i3], twiddles[1+3*u*fstride])
+		scratch[4] = complex_mult(input[i4], twiddles[1+4*u*fstride])
+
+		scratch[7] = complex_add(scratch[1], scratch[4])
+		scratch[8] = complex_add(scratch[2], scratch[3])
+		scratch[9] = complex_sub(scratch[2], scratch[3])
+		scratch[10] = complex_sub(scratch[1], scratch[4])
+
+		input[i0].real = input[i0].real + scratch[7].real + scratch[8].real
+		input[i0].imag = input[i0].imag + scratch[7].imag + scratch[8].imag
+
+		scratch[5] = { real = scratch[0].real + scratch[7].real*ya.real + scratch[8].real*yb.real,
+							imag = scratch[0].imag + scratch[7].imag*ya.real + scratch[8].imag*yb.real }
+
+		scratch[6]	=	{ real = scratch[10].imag*ya.imag + scratch[9].imag*yb.imag,
+							  imag = -1* scratch[10].real*ya.imag + scratch[9].real*yb.imag }
+
+		input[i1] = complex_sub(scratch[5], scratch[6])
+		input[i4] = complex_add(scratch[5], scratch[6])
+
+		scratch[11] =	{ real = scratch[0].real + scratch[7].real*yb.real + scratch[8].real*ya.real,
+							  imag = scratch[0].imag + scratch[7].imag*yb.real + scratch[8].imag*ya.real }
+
+		scratch[12] = { real = -1* scratch[10].imag*yb.imag + scratch[9].imag*ya.imag,
+							 imag = scratch[10].real*yb.imag - scratch[9].real*ya.imag }
+
+		input[i2] = complex_add(scratch[11], scratch[12])
+		input[i3] = complex_sub(scratch[11], scratch[12])
+
+		i0=i0+1
+		i1=i1+1
+		i2=i2+1
+		i3=i3+1
+		i4=i4+1
+
+	end
+
+end
 function butterfly5(input,out_index, fstride, twiddles, m, inverse)
 	local i0,i1,i2,i3,i4 = out_index,out_index+m,out_index+2*m,out_index+3*m,out_index+4*m
 	local scratch = {}
@@ -809,6 +959,32 @@ end
 ---------------------------------------------------------------
 --Carries out a generic butterfly run of the input sample.
 ---------------------------------------------------------------
+function butterfly_generic_dan(input,out_index, fstride, twiddles, m, p )
+	local norig = #input
+
+	for u = 0,m-1 do
+		local k = u
+		for q1 = 0,p-1 do
+			scratchbuf[q1] = input[out_index+k]
+			k = k + m
+		end
+
+		k = u
+
+		for q1=0,p-1 do
+			local twidx = 0
+			input[out_index+k] = scratchbuf[0]
+			for q=1,p-1 do
+				twidx = twidx + fstride*k
+				if twidx >= Norix then twidx = twidx - Norig end
+				local t = complex_mult(scratchbuf[q], twiddles[1+twidx])
+				input[out_index+k] = complex_add(input[out_index+k], t)
+			end
+			k = k + m
+		end
+	end
+end
+
 function butterfly_generic(input,out_index, fstride, twiddles, m, p, inverse )
 	local norig = #input
 
@@ -846,28 +1022,51 @@ function _init()
     --    add(test_data, 0.5 + 0.5 * sin(i / 100))
     --end
 
-    size = 4
+    --size = 4
+
+    --for i=1,size do
+    --     local to_add = {}
+    --     to_add.real = -sin((i-1)/(5 * 3.141 * 2))
+    --     to_add.imag = 0
+    --    add(test_data, to_add)
+    --    print(to_add.real)
+    --end
+
+    --print(#test_data)
+
+    --local result = luafft.fft(test_data, false)
+
+    ----cls(0)
+    --for i=1,(#result/4)+1 do
+    --  local c = result[i]
+    --    --pset(i / 30, 120 - 0.125 * c:abs(), 7)
+    --    local val = complex_abs(c) / (#test_data)
+    --    --print(c)
+    --    print(val)
+    --    pset(i, 120 - val, 7)
+    --    --print(c.abs)
+    --    --print(c)
+    --end
+
+    size = 32
 
     for i=1,size do
          local to_add = {}
          to_add.real = -sin((i-1)/(5 * 3.141 * 2))
          to_add.imag = 0
         add(test_data, to_add)
-        print(to_add.real)
     end
-
-    print(#test_data)
 
     local result = luafft.fft(test_data, false)
 
-    --cls(0)
+    cls(0)
     for i=1,(#result/4)+1 do
       local c = result[i]
         --pset(i / 30, 120 - 0.125 * c:abs(), 7)
         local val = complex_abs(c) / (#test_data)
         --print(c)
-        print(val)
-        pset(i, 120 - val, 7)
+        --print(val)
+        pset(i, 80 - 10 * val, 7)
         --print(c.abs)
         --print(c)
     end

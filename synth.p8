@@ -12,7 +12,6 @@ pat_bass = "BB_B__6_DD_D__8_" .. "AA_A__=_:_=_<_:_" .. "<<_<__=_:_=_<_:_" .. "==
 pat_b    = "::_==_:_::_888__" .. "88_<<_8_88_555__" .. "66_::_6_666_333_" .. "55555555________"
 
 octave = 1
-pure_wave_central_freq = 0
 wave_harshness_score = 0
 
 bg_col = 4
@@ -263,25 +262,6 @@ function _draw()
 
     sspr(40, 0, 24, 32, face_x, face_y, 24 * scale, 32 * scale)
 
-    --local diff = 0
-    --local avg_mag = 0
-    --for i=1,#canvas do
-    --    diff += canvas[i] - sin(i / #canvas) -- hack
-    --    avg_mag += abs(canvas[i]) 
-    --end
-
-    --local face_id = flr(0.1 + sin(t * 3) * diff) % 3 + 1
-    ----local face_id = flr(diff + 0.1 * sin(t * 10)) % 3 + 1
-
-    ----print(diff, 10, 10)
-    ----print(avg_mag, 10, 20)
-
-    --if (((flr(t * 9)) % flr(avg_mag / 10)) == 0) then
-    --    face_id = (face_id + 1) % 4
-    --end
-    ----local face_id = canvas[1] -- peek(0x4300 + 1) % 4
-    ----local face_id = flr((t * 10)) % 4
-
     face_id = clamp(flr(wave_harshness_score - 1), 0, 3)
 
     if (rnd() < 0.5) then
@@ -337,10 +317,12 @@ fft_display_y = 80
 fft_display_height = 50
 fft_display_width = 50
 
+central_freq = 0
+max_freq_val = 0
+
 function calculate_draw_fft(samples)
 
     -- heuristic taken from empirical measurements 
-    pure_wave_central_freq = flr(6.5 * octave)
     wave_harshness_score = 0
 
     local buffer_size = 512 
@@ -352,26 +334,31 @@ function calculate_draw_fft(samples)
     line(fft_display_x, fft_display_y, fft_display_x, fft_display_y, foreground_col)
     local to_draw = #result / 8
 
-    local max_i = 0
-    local max_val = 0
+    -- set central_freq so we can compute wave_harshness_score
+    -- deliberately dont allow central_freq=0, so start i=1
+    max_freq_val = 0
+    for i=1,to_draw do
+        local c = result[i + 1]
+        local val = complex_abs(c)
+        if (val > max_freq_val) then
+            max_freq_val = val
+            central_freq = i
+        end
+    end
 
     for i=0,to_draw do
         local c = result[i + 1]
         local val = complex_abs(c) / buffer_size
 
-        local dist = abs(i - pure_wave_central_freq)
+        local dist = abs(i - central_freq)
         wave_harshness_score += dist * val 
 
-        if (val > max_val) then
-            max_val = val
-            max_i = i
-        end
         --print(val)
         --pset(i, 80 - 80 * val, 7)
         line(fft_display_x + (i / to_draw) * fft_display_width, fft_display_y - val * fft_display_height, foreground_col)
     end
 
-    --print("approx_time " .. pure_wave_central_freq, 10, 12, 7)
+    print("approx_time " .. central_freq, 10, 12, 7)
     --print("max_i " .. max_i .. " max_val " .. max_val, 10, 5, 7)
     --print("score " .. wave_harshness_score, 10, 20, 7)
 end

@@ -322,6 +322,11 @@ function _draw()
     end
 end
 
+fft_display_x = 20
+fft_display_y = 80
+fft_display_height = 50
+fft_display_width = 50
+
 function calculate_draw_fft(samples)
     local buffer_size = 512 
     local buffer = {}
@@ -329,11 +334,14 @@ function calculate_draw_fft(samples)
         add(buffer, {real = samples[i], imag = 0})
     end
     local result = fft(buffer, false)
-    for i=1,(#result/4)+1 do
-      local c = result[i]
+    line(fft_display_x, fft_display_y, fft_display_x, fft_display_y, foreground_col)
+    local to_draw = #result / 8
+    for i=0,to_draw do
+        local c = result[i + 1]
         local val = complex_abs(c) / buffer_size
         --print(val)
-        pset(i, 80 - 80 * val, 7)
+        --pset(i, 80 - 80 * val, 7)
+        line(fft_display_x + (i / to_draw) * fft_display_width, fft_display_y - val * fft_display_height, foreground_col)
     end
 end
 

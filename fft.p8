@@ -510,10 +510,10 @@ function luafft.fft(input, inverse)
       --msg(twiddle_imaginary)
 		twiddles[1+i] = {real = twiddle_real, imag = twiddle_imaginary}
 	end
-   printh("twiddles")
-   for i,c in pairs(twiddles) do
-      printh(c.real .. "+" .. c.imag .. "i")
-   end
+   --printh("twiddles")
+   --for i,c in pairs(twiddles) do
+   --   printh(c.real .. "+" .. c.imag .. "i")
+   --end
    --while true do end
 	msg("Twiddles initialized...")
 	local factors = calculate_factors(num_dan)
@@ -664,10 +664,10 @@ function butterfly2_dan(input,out_index,fstride, twiddles, m)
       input[i2] = complex_sub(input[i1], t)
       input[i1] = complex_add(input[i1], t)
 
-      printh("---------")
-      printh("Butterfly2")
-      printh("Fout2 " .. input[i2].real .. "+" .. input[i2].imag .. "i")
-      printh("Fout1 " .. input[i1].real .. "+" .. input[i1].imag .. "i")
+      --printh("---------")
+      --printh("Butterfly2")
+      --printh("Fout2 " .. input[i2].real .. "+" .. input[i2].imag .. "i")
+      --printh("Fout1 " .. input[i1].real .. "+" .. input[i1].imag .. "i")
 
       i1 = i1 + 1
       i2 = i2 + 1
@@ -713,11 +713,11 @@ function butterfly4_dan(input,out_index, fstride, twiddles, m)
    --while true do end
 
 	repeat
-      printh("Butterfly4_pre")
-      printh("Fout " .. input[i].real .. "+" .. input[i].imag .. "i")
-      printh("Fout[m] " .. input[i+m].real .. "+" .. input[i+m].imag .. "i")
-      printh("Fout[m2] " .. input[i+m2].real .. "+" .. input[i+m2].imag .. "i")
-      printh("Fout[m3] " .. input[i+m3].real .. "+" .. input[i+m3].imag .. "i")
+      --printh("Butterfly4_pre")
+      --printh("Fout " .. input[i].real .. "+" .. input[i].imag .. "i")
+      --printh("Fout[m] " .. input[i+m].real .. "+" .. input[i+m].imag .. "i")
+      --printh("Fout[m2] " .. input[i+m2].real .. "+" .. input[i+m2].imag .. "i")
+      --printh("Fout[m3] " .. input[i+m3].real .. "+" .. input[i+m3].imag .. "i")
 		scratch[0] = complex_mult(input[i+m],twiddles[ti1])
 		scratch[1] = complex_mult(input[i+m2],twiddles[ti2])
 		scratch[2] = complex_mult(input[i+m3],twiddles[ti3])
@@ -729,9 +729,9 @@ function butterfly4_dan(input,out_index, fstride, twiddles, m)
 		scratch[4] = complex_sub(scratch[0],scratch[2])
 
 		input[i+m2] = complex_sub(input[i],scratch[3])
-      printh("twiddles[ti1] " .. twiddles[ti1].real .. "+" .. twiddles[ti1].imag .. "i")
-      printh("twiddles[ti2] " .. twiddles[ti2].real .. "+" .. twiddles[ti2].imag .. "i")
-      printh("twiddles[ti3] " .. twiddles[ti3].real .. "+" .. twiddles[ti3].imag .. "i")
+      --printh("twiddles[ti1] " .. twiddles[ti1].real .. "+" .. twiddles[ti1].imag .. "i")
+      --printh("twiddles[ti2] " .. twiddles[ti2].real .. "+" .. twiddles[ti2].imag .. "i")
+      --printh("twiddles[ti3] " .. twiddles[ti3].real .. "+" .. twiddles[ti3].imag .. "i")
 
 		ti1 = ti1 + fstride
 		ti2 = ti2 + fstride*2
@@ -744,17 +744,17 @@ function butterfly4_dan(input,out_index, fstride, twiddles, m)
       input[i+m3].real = (scratch[5].real - scratch[4].imag)
       input[i+m3].imag = (scratch[5].imag + scratch[4].real)
 
-      for i,c in pairs(scratch) do
-         printh("scratch " .. i .. " - " .. c.real .. "+" .. c.imag .. "i")
-      end
+      --for i,c in pairs(scratch) do
+      --   printh("scratch " .. i .. " - " .. c.real .. "+" .. c.imag .. "i")
+      --end
 
-      printh("---------")
-      printh("--Butterfly4")
-      printh("---------")
-      printh("Fout " .. input[i].real .. "+" .. input[i].imag .. "i")
-      printh("Fout[m] " .. input[i+m].real .. "+" .. input[i+m].imag .. "i")
-      printh("Fout[m2] " .. input[i+m2].real .. "+" .. input[i+m2].imag .. "i")
-      printh("Fout[m3] " .. input[i+m3].real .. "+" .. input[i+m3].imag .. "i")
+      --printh("---------")
+      --printh("--Butterfly4")
+      --printh("---------")
+      --printh("Fout " .. input[i].real .. "+" .. input[i].imag .. "i")
+      --printh("Fout[m] " .. input[i+m].real .. "+" .. input[i+m].imag .. "i")
+      --printh("Fout[m2] " .. input[i+m2].real .. "+" .. input[i+m2].imag .. "i")
+      --printh("Fout[m3] " .. input[i+m3].real .. "+" .. input[i+m3].imag .. "i")
 
 		i = i + 1
 		k = k - 1
@@ -1074,22 +1074,29 @@ function _init()
 
     for i=1,size do
          local to_add = {}
-         to_add.real = -sin((i-1)/(5 * 3.141 * 2))
+         local val = 0
+         --val =  -sin((i-1)/(5 * 3.141 * 2))
+
+         if flr(i/32) % 2 == 0 then
+            val =  1
+         end
+
+         to_add.real = val
          to_add.imag = 0
         add(test_data, to_add)
     end
 
     local result = luafft.fft(test_data, false)
 
-    --cls(0)
+    cls(0)
     for i=1,(#result/4)+1 do
     --for i=1,(#result/4)+1 do
       local c = result[i]
         --pset(i / 30, 120 - 0.125 * c:abs(), 7)
         local val = complex_abs(c) / (#test_data)
         --print(c)
-        print(val)
-        --pset(i, 80 - 10 * val, 7)
+        --print(val)
+        pset(i, 80 - 80 * val, 7)
         --print(c.abs)
         --print(c)
     end

@@ -70,6 +70,9 @@ function clamp(val, a, b)
     return min(max(val, a), b)
 end
 
+canvas_prev_mouse_x = -1
+canvas_prev_mouse_y = -1
+
 function tick_canvas()
     local mouse_x = (stat(32) - canvas_xoff) / canvas_w
     local mouse_y = (stat(33) - canvas_yoff) / canvas_h
@@ -77,14 +80,36 @@ function tick_canvas()
 
     in_canvas = mouse_x > 0 and mouse_x < 1 and mouse_y > 0 and mouse_y < 1
 
-    if (mouse_pressed and mouse_x > 0 and mouse_x < 1) then
-        mouse_y = clamp(mouse_y, 0, 1)
-        local pos = flr(mouse_x * canvas_w)
-        local x = 2*(mouse_y - 0.5)
-        canvas[pos] = x
-        screenshake_t = flr(sqrt(wave_harshness_score))
-        screenshake_mag = 0.35 * sqrt(wave_harshness_score)
+    local mx = canvas_prev_mouse_x
+    local my = canvas_prev_mouse_y
+    local incr_count = abs(mouse_x - canvas_prev_mouse_x) * canvas_w
+
+    local dmx = 1
+    if mouse_x < canvas_prev_mouse_x then
+        dmx = -1
     end
+    dmx /= canvas_w
+
+    local dmy = (mouse_y - canvas_prev_mouse_y) / incr_count
+
+    if mouse_pressed then
+        for i=0,incr_count do
+            ic = mx > 0 and mx < 1 and my > 0 and my < 1
+            if ic then
+                local my_clamped = clamp(my, 0, 1)
+                local pos = flr(mx * canvas_w)
+                local x = 2*(my_clamped - 0.5)
+                canvas[pos] = x
+                screenshake_t = flr(sqrt(wave_harshness_score))
+                screenshake_mag = 0.35 * sqrt(wave_harshness_score)
+            end
+            mx += dmx
+            my += dmy
+        end
+    end
+
+    canvas_prev_mouse_x = mouse_x
+    canvas_prev_mouse_y = mouse_y
 
     --print(mouse_x .. " " .. mouse_y, 10, 10, foreground_col)
 end
@@ -358,7 +383,7 @@ function calculate_draw_fft(samples)
         line(fft_display_x + (i / to_draw) * fft_display_width, fft_display_y - val * fft_display_height, foreground_col)
     end
 
-    print("approx_time " .. central_freq, 10, 12, 7)
+    --print("approx_time " .. central_freq, 10, 12, 7)
     --print("max_i " .. max_i .. " max_val " .. max_val, 10, 5, 7)
     --print("score " .. wave_harshness_score, 10, 20, 7)
 end

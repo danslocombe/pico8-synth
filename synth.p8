@@ -219,6 +219,7 @@ function _update60()
     local buffersize = 256
     local draw_incr = 512 / (8*buffersize)
     if force_reset or to_buffer > buffersize then
+        cls(bg_col)
         samples = {}
         force_reset = false
         for i=0,buffersize do
@@ -244,7 +245,6 @@ function _update60()
             end
 
             if i == 0 then
-                cls(bg_col)
                 line(16, spectro_y, 16, spectro_y, foreground_col)
             elseif i % 8 == 0 then
                 line(16+draw_incr * i, spectro_y + wave * spectro_height, foreground_col)
